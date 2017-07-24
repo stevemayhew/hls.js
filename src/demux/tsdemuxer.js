@@ -528,10 +528,9 @@
 
           var payloadType = 0;
           var payloadSize = 0;
-          var endOfCaptions = false;
           var b = 0;
 
-          while (!endOfCaptions && expGolombDecoder.bytesAvailable > 1) {
+          while (expGolombDecoder.bytesAvailable > 1) {
             payloadType = 0;
             do {
                 b = expGolombDecoder.readUByte();
@@ -545,50 +544,74 @@
                 payloadSize += b;
             } while (b === 0xFF);
 
-            // TODO: there can be more than one payload in an SEI packet...
-            // TODO: need to read type and size in a while loop to get them all
-            if (payloadType === 4 && expGolombDecoder.bytesAvailable !== 0) {
+            // Looking at https://en.wikipedia.org/wiki/CEA-708
+            // Look for and parse, ITU-T T.35 UserData that is ATSC SCTE EIA-
 
-              endOfCaptions = true;
+            switch (payloadType) {
 
-              var countryCode = expGolombDecoder.readUByte();
+              case 4:   // ITU-T T.35 User data.
+                if (expGolombDecoder.bytesAvailable > 3) {
+                  var countryCode = expGolombDecoder.readUByte();
+                  var providerCode = expGolombDecoder.readUShort();
+                  payloadSize -= 3;   // ITU T.35 provider and country bytes
 
-              if (countryCode === 181) {
-                var providerCode = expGolombDecoder.readUShort();
+                  // Only provider 49 supported (ATSC User Data), and CC US (181)
+                  if (countryCode == 181 && providerCode == 49) {
+                    var userStructure = expGolombDecoder.readUInt();
+                    payloadSize -= 4;
+                    switch (userStructure) {
+                      case 0x47413934:              // "GA94" - ATSC1_data
+                        // Raw CEA-608 bytes wrapped in CEA-708 packet
+                        var userDataType = expGolombDecoder.readUByte();
+                        payloadSize -= 1;
 
-                if (providerCode === 49) {
-                  var userStructure = expGolombDecoder.readUInt();
+                        if (userDataType === 3) {
+                          var firstByte = expGolombDecoder.readUByte();
+                          var emData = expGolombDecoder.readUByte();
 
-                  if (userStructure === 0x47413934) {
-                    var userDataType = expGolombDecoder.readUByte();
+                          var totalCCs = 0x1f & firstByte;          // Count is low 5 bits.
+                          var additionalData = 0x20 & firstByte;    // additional_data_flag
+                          var byteArray = [firstByte, emData];
 
-                    // Raw CEA-608 bytes wrapped in CEA-708 packet
-                    if (userDataType === 3) {
-                      var firstByte = expGolombDecoder.readUByte();
-                      var secondByte = expGolombDecoder.readUByte();
+                          for (i = 0; i < totalCCs; i++) {
+                            // 3 bytes per CC
+                            byteArray.push(expGolombDecoder.readUByte());
+                            byteArray.push(expGolombDecoder.readUByte());
+                            byteArray.push(expGolombDecoder.readUByte());
+                          }
 
-                      var totalCCs = 31 & firstByte;
-                      var byteArray = [firstByte, secondByte];
+                          this._insertSampleInOrder(this._txtTrack.samples, {type: 3, pts: pes.pts, bytes: byteArray});
 
-                      for (i = 0; i < totalCCs; i++) {
-                        // 3 bytes per CC
-                        byteArray.push(expGolombDecoder.readUByte());
-                        byteArray.push(expGolombDecoder.readUByte());
-                        byteArray.push(expGolombDecoder.readUByte());
-                      }
+                          b = expGolombDecoder.readUByte();   // Toss the marker byte
+                          if (additionalData) {
+                            debug.warn("Unexpected ATSC_reserved_user_data, need to read this?");
+                          }
 
-                      this._insertSampleInOrder(this._txtTrack.samples, { type: 3, pts: pes.pts, bytes: byteArray });
+                        } else {
+                          logger.warn("Unexpected GA94 ATSC1 user datatype: " + userDataType);
+                          expGolombDecoder.skipBits(payloadSize * 8);
+                        }
+                        break;
+
+                      default:              // "DTG1", for example.
+                        expGolombDecoder.skipBits(payloadSize * 8);
+                        break;
                     }
+                  } else {
+                    expGolombDecoder.skipBits(payloadSize * 8);
+                  }
+                } else {
+                  logger.warn("Invalid ITU-T T.35 User Data, skipping");
+                }
+                break;
+              default:  // Balance of SEI (Picture timing, unregistered, display orientation, ...)
+                //logger.debug('ignore SEI payloadType:' + payloadType);
+                if (payloadSize < expGolombDecoder.bytesAvailable) {
+                  while(payloadSize-- > 0) {
+                    expGolombDecoder.readUByte();
                   }
                 }
-              }
-            }
-            else if (payloadSize < expGolombDecoder.bytesAvailable)
-            {
-              for (i = 0; i<payloadSize; i++)
-              {
-                expGolombDecoder.readUByte();
-              }
+                break;
             }
           }
           break;
