@@ -132,6 +132,11 @@ class AbrController extends EventHandler {
     if (frag.type === 'main' && !isNaN(frag.sn)) {
       // stop monitoring bw once frag loaded
       this.clearTimer();
+
+      // Fudge first fragment loaded in new level.
+      if (this.lastLoadedFragLevel !== frag.level) {
+        data.stats.trequest = data.stats.tfirst;
+      }
       // store level id after successful fragment load
       this.lastLoadedFragLevel = frag.level;
       // reset forced auto level value so that next level will be selected
