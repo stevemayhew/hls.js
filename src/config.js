@@ -71,6 +71,7 @@ export var hlsDefaultConfig = {
   fpsController: FPSController,
   stretchShortVideoTrack: false,            // used by mp4-remuxer
   forceKeyFrameOnDiscontinuity: true,       // used by ts-demuxer
+  rulesCheckAbandonTimer: undefined,        // used by abr-controller, set to timer value in MS
   abrEwmaFastLive: 3,                       // used by abr-controller
   abrEwmaSlowLive: 9,                       // used by abr-controller
   abrEwmaFastVoD: 3,                        // used by abr-controller

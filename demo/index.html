@@ -75,7 +75,12 @@ header {
       </p>
     </header>
     <div id="controls">
-      <div id="customButtons"></div>
+      <div id="customButtons">
+     		<lable>TCD IP:</lable><input class="ip-addr" type="text" value="tivo-8f90000001f303b" id="tcdAddr" autocomplete="on">
+     		<button type="button" id="loadShows">Load Shows</button>
+     		<button type="button" id="startSession">Start Session</button>
+
+     	</div>
       <select id="streamSelect" class="innerControls"><option value="" selected>(Enter custom URL below)</option></select>
       <input id="streamURL" class="innerControls" type=text value=""/>
       <label class="innerControls"><input id="enableStreaming" type=checkbox checked/> Enable Streaming</label>
@@ -207,6 +212,12 @@ header {
   </div>
   <br><br>
 
+  <script>
+ 		window.debug = console;
+ 	</script>
+  <script src="tivo-transcode.js"></script>
+  <script src="MindRpc.js"></script>
+
   <script src="../../streams.js"></script>
   <script src="/hls.js/dist/hls.js"></script>
   <script src="canvas.js"></script>
@@ -240,12 +251,22 @@ $(document).ready(function() {
 
    $('h2').append(' <a target=_blank href=https://github.com/video-dev/hls.js/releases/tag/v' + Hls.version + '>v' + Hls.version + '</a>');
 
+
+  $('#loadShows').click(function() {
+      loadMyShows($('.ip-addr').val());
+  });
+
+  $('#startSession').click(function() {
+      var $streamSelect = $('#streamSelect > :selected');
+      var msi = $streamSelect.data('msi');
+      startHlsSesssion(null, msi.myShowsItemId);
+  })
 });
 
 
   'use strict';
   var hls,events, stats,tracks,fmp4Data,
-      enableStreaming = JSON.parse(getURLParam('enableStreaming',true))
+      enableStreaming = JSON.parse(getURLParam('enableStreaming',true)),
       autoRecoverError = JSON.parse(getURLParam('autoRecoverError',true)),
       enableWorker = JSON.parse(getURLParam('enableWorker',true)),
       levelCapping = JSON.parse(getURLParam('levelCapping',-1)),
@@ -255,7 +276,7 @@ $(document).ready(function() {
   video.volume = 0.05;
   $("#currentVersion").html("Hls version:" + Hls.version);
 
-  loadStream(decodeURIComponent(getURLParam('src','https://video-dev.github.io/streams/x36xhzz/x36xhzz.m3u8')));
+//  loadStream(decodeURIComponent(getURLParam('src','https://video-dev.github.io/streams/x36xhzz/x36xhzz.m3u8')));
 
   function loadStream(url) {
     hideCanvas();
@@ -282,9 +303,14 @@ $(document).ready(function() {
        fmp4Data = { 'audio': [], 'video': [] };
        hls = new Hls({
          debug:true,
+         abrEwmaFastVoD: 3,                        // used by abr-controller
+         abrEwmaSlowVoD: 9,                        // used by abr-controller
+         abrMaxWithRealBitrate: true,
+         maxMaxBufferLength: 32,
+         abrBandWidthFactor : 0.90,                // when considering switch down, use this much of measured bitrate
+         abrBandWidthUpFactor : 0.95,               // and this value when switching up
          enableWorker : enableWorker,
-         defaultAudioCodec : defaultAudioCodec,
-         abrMaxWithRealBitrate: true
+         defaultAudioCodec : defaultAudioCodec
        });
        $("#HlsStatus").text('loading manifest and attaching video element...');
        hls.loadSource(url);

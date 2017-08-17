@@ -336,7 +336,7 @@
           break;
 
         default:
-          logger.log('unkown stream type:'  + data[offset]);
+          logger.trace('unkown stream type:'  + data[offset]);
           break;
       }
       // move to the next table entry

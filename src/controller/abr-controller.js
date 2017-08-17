@@ -32,18 +32,19 @@ class AbrController extends EventHandler {
   }
 
   onFragLoading(data) {
-    let frag = data.frag;
+    let frag = data.frag,
+        hls = this.hls,
+        config = hls.config;
+
     if (frag.type === 'main') {
-      if (!this.timer) {
-        this.timer = setInterval(this.onCheck, 100);
+      if (!this.timer && config.rulesCheckAbandonTimer) {
+        this.timer = setInterval(this.onCheck, config.rulesCheckAbandonTimer);
       }
       // lazy init of bw Estimator, rationale is that we use different params for Live/VoD
       // so we need to wait for stream manifest / playlist type to instantiate it.
       if (!this._bwEstimator) {
-        let hls = this.hls,
-            level = data.frag.level,
+        let level = data.frag.level,
             isLive = hls.levels[level].details.live,
-            config = hls.config,
             ewmaFast, ewmaSlow;
 
         if (isLive) {
@@ -289,6 +290,11 @@ class AbrController extends EventHandler {
       // special case to support startLevel = -1 (bitrateTest) on live streams : in that case we should not exit loop so that _findBestLevel will return -1
         (!fetchDuration || (live  && !this.bitrateTestDelay) || fetchDuration < maxFetchDuration) ) {
         // as we are looping from highest to lowest, this will return the best achievable quality level
+        if (currentLevel !== i) {
+          logger.debug(`_findBestLevel switch current/next: ${currentLevel}/${i}  bw/adjustedBw/bitRate/realBitrate: ${Math.round(currentBw)}/${Math.round(adjustedbw)}/${bitrate}/${levels[i].bitrate}`);
+
+        }
+
         return i;
       }
     }

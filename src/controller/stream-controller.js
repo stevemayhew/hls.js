@@ -226,7 +226,7 @@ class StreamController extends EventHandler {
     }
 
     // if buffer length is less than maxBufLen try to load a new fragment ...
-    logger.trace(`buffer length of ${bufferLen.toFixed(3)} is below max of ${maxBufLen.toFixed(3)}. checking for more payload ...`);
+    logger.log(`buffer length of ${bufferLen.toFixed(3)} is below max of ${maxBufLen.toFixed(3)}. checking for more payload ...`);
 
     // set next load level : this will trigger a playlist load if needed
     this.level = hls.nextLoadLevel = level;

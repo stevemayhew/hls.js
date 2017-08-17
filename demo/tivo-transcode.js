@@ -71,7 +71,7 @@ function startHlsSesssion(channelId, recordingId) {
              type:"hlsStreamEncryptionInfo",
              encryptionType:"hlsAes128Cbc"
          },
-         //hlsStreamDesiredVariantsSet: "ABR",
+         hlsStreamDesiredVariantsSet: "ABR",
          sessionType: 'streaming',
          isLocal:true
      };
