@@ -221,7 +221,7 @@ class PlaylistLoader extends EventHandler {
   }
 
   parseMasterPlaylist(string, baseurl) {
-    let levels = [], result;
+    let config = this.hls.config, levels = [], result;
     MASTER_PLAYLIST_REGEX.lastIndex = 0;
     while ((result = MASTER_PLAYLIST_REGEX.exec(string)) != null){
       const level = {};
@@ -254,7 +254,7 @@ class PlaylistLoader extends EventHandler {
 
       levels.push(level);
     }
-    return levels;
+    return typeof(config.filterLevels) === 'function' ? config.filterLevels(levels) : levels;
   }
 
   parseMasterPlaylistMedia(string, baseurl, type, audioCodec=null) {

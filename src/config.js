@@ -50,6 +50,7 @@ export var hlsDefaultConfig = {
   levelLoadingMaxRetry: 4,                // used by playlist-loader
   levelLoadingRetryDelay: 1000,           // used by playlist-loader
   levelLoadingMaxRetryTimeout: 64000,     // used by playlist-loader
+  filterLevels: undefined,                // used by playlist-loader
   fragLoadingTimeOut: 20000,              // used by fragment-loader
   fragLoadingMaxRetry: 6,                 // used by fragment-loader
   fragLoadingRetryDelay: 1000,            // used by fragment-loader

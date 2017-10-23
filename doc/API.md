@@ -47,6 +47,7 @@
   - [`fragLoadingMaxRetry` / `manifestLoadingMaxRetry` / `levelLoadingMaxRetry`](#fragloadingmaxretry--manifestloadingmaxretry--levelloadingmaxretry)
   - [`fragLoadingMaxRetryTimeout` / `manifestLoadingMaxRetryTimeout` / `levelLoadingMaxRetryTimeout`](#fragloadingmaxretrytimeout--manifestloadingmaxretrytimeout--levelloadingmaxretrytimeout)
   - [`fragLoadingRetryDelay` / `manifestLoadingRetryDelay` / `levelLoadingRetryDelay`](#fragloadingretrydelay--manifestloadingretrydelay--levelloadingretrydelay)
+  - [`filterLevels`](#filterLevels)
   - [`startFragPrefetch`](#startfragprefetch)
   - [`appendErrorMaxRetry`](#appenderrormaxretry)
   - [`loader`](#loader)
@@ -315,6 +316,7 @@ Configuration parameters could be provided to hls.js upon instantiation of `Hls`
       fragLoadingMaxRetry: 6,
       fragLoadingRetryDelay: 500,
       fragLoadingMaxRetryTimeout: 64000,
+      filterLevels: undefined,
       startFragPrefetch: false,
       appendErrorMaxRetry: 3,
       loader: customLoader,
@@ -669,6 +671,25 @@ Note: If `fLoader` or `pLoader` are used, they overwrite `loader`!
     /** Destroy loading context. */
     this.destroy = function () {};
   }
+```
+
+### `filterLevels`
+
+(default: `undefined`)
+
+Optional function to filter the levels loaded from the master playlist.  Takes list of levels loaded from the playlist and replaces them with the list returned.
+
+```js
+
+ var config = {
+	 filterLevels: function(levels) {
+	   var filtered = levels.filter(function(level) {
+	     return level.width >= 640;
+	   });
+	
+	   return filtered;
+	 }
+ }
 ```
 
 ### `fLoader`
